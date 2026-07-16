@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from console.service.acquisition_manager import AcquisitionControlManager
 from params import ScanParams
 from read_data import read_data
-from make_magnitude import make_magnitude
+from make_magnitude import make_magnitude_mean
 from make_phase_ramps import make_phase_ramps
 from spgr_def_v0 import spgr
 from fft_data import fft_data
@@ -41,10 +41,10 @@ def main():
         "flip_angle_deg": 15,
         "rf_duration": 200e-6,
         "te_1": 6e-3,
-        "te_2": 14e-3,
+        "te_2": 10e-3,
         "tr_1": 20e-3,
         "tr_2_factor": 5,
-        "readout_time": 4e-3,
+        "readout_time": 3e-3,
         "prephasing_time": 1e-3,
         "spoiling_time": 2e-3,
         "spoiler_cycles": 160,
@@ -53,7 +53,7 @@ def main():
     n_calibs = 1
 
     #make f0 version that doesnt plot
-    runpy.run_path("/home/openimaging/Code/Fast_Calib/FastCalibLF/src/new_f0.py")
+    # runpy.run_path("/home/openimaging/Code/Fast_Calib/FastCalibLF/src/new_f0.py")
     # calib_params = ScanParams(console)
     # print(calib_params)
     for i in range(n_calibs):
@@ -72,10 +72,11 @@ def main():
         data = read_data(
                 raw_flat, params["n_readout"], params["n_repetitions"], 3, params["n_dummy"])
         hybrid = fft_data(data)
-
         plot_stuff(raw, data, hybrid)
-
-        S1, S2 = make_magnitude(hybrid) # TODO: avg data here
+        # %%
+        mag = make_magnitude_mean(hybrid) # TODO: avg data here
+        S1, S2, = mag[0], mag[1]
+        # %%
         alpha = fit_alpha(S1, S2)
 
         hx, hy, hz = make_phase_ramps(hybrid)
