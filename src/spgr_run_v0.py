@@ -3,12 +3,14 @@ import runpy
 import numpy as np
 import console
 
+from matplotlib import pyplot as plt
+
 from console.service.acquisition_manager import AcquisitionControlManager
 from params import ScanParams
 from read_data import read_data
 from make_magnitude import make_magnitude
 from make_phase_ramps import make_phase_ramps
-from spgr_v0 import spgr
+from spgr_def_v0 import spgr
 
 def main():
     # TBD
@@ -37,13 +39,13 @@ def main():
 
 
     #make f0 version that doesnt plot
-    runpy.run_path("/home/openimaging/Code/OpenImaging/utilities/calibration/f0_determination.py")
+    # runpy.run_path("/home/openimaging/Code/Fast_Calib/FastCalibLF/src/new_f0.py")
 
     # with AcquisitionControlManager() as mngr:
     #     mngr.acquisition.set_sequence(sequence=seq, parameter=console.parameter)
     #     acq_data = mngr.acquisition.run(store_unprocessed=False)
-    calib_params = ScanParams(console)
-    print(calib_params)
+    # calib_params = ScanParams(console)
+    # print(calib_params)
     with AcquisitionControlManager() as mngr:
         mngr.acquisition.set_sequence(
             sequence=seq,
@@ -51,8 +53,11 @@ def main():
         )
         acq_data = mngr.acquisition.run()
 
-    raw = acq_data.receive_data
-    print(raw.size)
+    raw = acq_data.receive_data[0]
+    
+    processed_data = raw.processed_data
+    print(processed_data.shape)
+
 
     # calib_params.print()
 
