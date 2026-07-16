@@ -1,12 +1,19 @@
+# %%
 import numpy as np
 import pypulseq as pp
+import matplotlib.pyplot as plt
+from math import pi
+from console.utilities.sequences.system_settings import system as default_system
+
+# current calibration files are in : "/home/openimaging/Code/openimaging-mri/src/cortex/utilities"
 
 
-def make_spoiled_gre_1d(
+# %%
+def spgr(
     fov=220e-3,
-    n_readout=128,
-    n_dummy=5,
-    n_repetitions=1,
+    n_readout=40,
+    n_dummy=10,
+    n_repetitions=10,
     projection_axes=("x", "y", "z"),
     flip_angle_deg=15,
     rf_duration=200e-6,
@@ -17,26 +24,13 @@ def make_spoiled_gre_1d(
     readout_time=4e-3,
     prephasing_time=1e-3,
     spoiling_time=2e-3,
-    spoiler_cycles=10,
+    spoiler_cycles=160,
     spoiler_extent=(220e-3, 220e-3, 220e-3),
-    filename="spoiled_gre_1d.seq",
-):
-    # ============================================================
-    # System limits
-    # ============================================================
-    system = pp.Opts(
-        max_grad=28,
-        grad_unit="mT/m",
-        max_slew=120,
-        slew_unit="T/m/s",
-        rf_ringdown_time=20e-6,
-        rf_dead_time=10e-6,
-        adc_dead_time=10e-6,
-    )
+) -> pp.Sequence:
+    seq = pp.Sequence(default_system)
 
-    seq = pp.Sequence(system)
 
-    # ============================================================
+        # ============================================================
     # Input parameters
     # ============================================================
     tr_2 = tr_2_factor * tr_1
@@ -51,8 +45,8 @@ def make_spoiled_gre_1d(
     rf = pp.make_block_pulse(
         flip_angle=np.deg2rad(flip_angle_deg),
         duration=rf_duration,
-        delay=system.rf_dead_time,
-        system=system,
+        delay=default_system.rf_dead_time,
+        system=default_system,
         use="excitation",
     )
 
@@ -65,21 +59,21 @@ def make_spoiled_gre_1d(
         channel="x",
         area=spoiler_cycles / extent_x,
         duration=spoiling_time,
-        system=system,
+        system=default_system,
     )
 
     gy_spoil = pp.make_trapezoid(
         channel="y",
         area=spoiler_cycles / extent_y,
         duration=spoiling_time,
-        system=system,
+        system=default_system,
     )
 
     gz_spoil = pp.make_trapezoid(
         channel="z",
         area=spoiler_cycles / extent_z,
         duration=spoiling_time,
-        system=system,
+        system=default_system,
     )
 
     spoiler_duration = pp.calc_duration(gx_spoil, gy_spoil, gz_spoil)
@@ -106,14 +100,14 @@ def make_spoiled_gre_1d(
             channel=projection_axis,
             flat_area=n_readout * delta_k,
             flat_time=readout_time,
-            system=system,
+            system=default_system,
         )
 
         adc_1 = pp.make_adc(
             num_samples=n_readout,
             duration=g_readout_positive.flat_time,
             delay=g_readout_positive.rise_time,
-            system=system,
+            system=default_system,
         )
 
         # Negative readout
@@ -121,14 +115,14 @@ def make_spoiled_gre_1d(
             channel=projection_axis,
             flat_area=-n_readout * delta_k,
             flat_time=readout_time,
-            system=system,
+            system=default_system,
         )
 
         adc_2 = pp.make_adc(
             num_samples=n_readout,
             duration=g_readout_negative.flat_time,
             delay=g_readout_negative.rise_time,
-            system=system,
+            system=default_system,
         )
 
         # Readout prephaser
@@ -136,7 +130,7 @@ def make_spoiled_gre_1d(
             channel=projection_axis,
             area=-g_readout_positive.area / 2,
             duration=prephasing_time,
-            system=system,
+            system=default_system,
         )
 
         # TE1 delay
@@ -270,64 +264,18 @@ def make_spoiled_gre_1d(
     seq.set_definition("TR2Factor", tr_2_factor)
     seq.set_definition("DummyPulses", n_dummy)
 
-    # ============================================================
-    # Timing check
-    # ============================================================
-    timing_ok, timing_errors = seq.check_timing()
+    # # ============================================================
+    # # Timing check
+    # # ============================================================
+    # timing_ok, timing_errors = seq.check_timing()
 
-    if timing_ok:
-        print("Timing check passed.")
-    else:
-        print("Timing errors:")
-        for error in timing_errors:
-            print(error)
+    # if timing_ok:
+    #     print("Timing check passed.")
+    # else:
+    #     print("Timing errors:")
+    #     for error in timing_errors:
+    #         print(error)
 
-    seq.write(filename)
+    # seq.write("spoiled_gre_1d.seq")
 
     return seq
-
-
-if __name__ == "__main__":
-
-    tr_1 = 20e-3
-    tr_2_factor = 5
-    te_1 = 6e-3
-    te_2 = 14e-3
-
-    n_repetitions = 10
-    n_dummy = 10
-    n_readout = 40
-    projection_axes = ("x", "y", "z")
-
-    seq = make_spoiled_gre_1d(
-        fov=220e-3,
-        n_readout=n_readout,
-        n_dummy=n_dummy,
-        n_repetitions=n_repetitions,
-        projection_axes=projection_axes,
-        flip_angle_deg=15.0,
-        rf_duration=200e-6,
-        te_1=te_1,
-        te_2=te_2,
-        tr_1=tr_1,
-        tr_2_factor=tr_2_factor,
-        readout_time=4e-3,
-        prephasing_time=1e-3,
-        spoiling_time=2e-3,
-        spoiler_cycles=n_readout * 4,
-        spoiler_extent=(220e-3, 220e-3, 220e-3),
-        filename="spoiled_gre_1d.seq",
-    )
-
-    tr_2 = tr_2_factor * tr_1
-    block_duration = tr_1 + tr_2
-
-    total_duration = (n_dummy * tr_1 + len(projection_axes) * n_repetitions * block_duration)
-
-    seq.plot(
-        time_range=(0, total_duration),
-        time_disp="ms",
-        grad_disp="mT/m",
-        stacked=True,
-        show_guides=True,
-    )
