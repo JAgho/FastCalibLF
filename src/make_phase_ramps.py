@@ -1,2 +1,2 @@
 def make_phase_ramps(hybrid):
-    return mean(hybrid, axis=(1,2))
+    return mean(hybrid, axis=(1))
