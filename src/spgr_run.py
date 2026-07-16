@@ -2,11 +2,13 @@
 import runpy
 import numpy as np
 import console
+
 from console.service.acquisition_manager import AcquisitionControlManager
 from params import ScanParams
 from read_data import read_data
 from make_magnitude import make_magnitude
 from make_phase_ramps import make_phase_ramps
+from spgr import SPGR
 
 def main():
     # TBD
@@ -37,14 +39,14 @@ def main():
     #nake f0 version that diesnt plot
     runpy.run_path("/home/openimaging/Code/OpenImaging/utilities/calibration/f0_determination.py")
 
-    with AcquisitionControlManager() as mngr:
-        mngr.acquisition.set_sequence(sequence=seq, parameter=console.parameter)
-        acq_data = mngr.acquisition.run(store_unprocessed=False)
+    # with AcquisitionControlManager() as mngr:
+    #     mngr.acquisition.set_sequence(sequence=seq, parameter=console.parameter)
+    #     acq_data = mngr.acquisition.run(store_unprocessed=False)
     calib_params = ScanParams(console)
 
     for i in range(3): 
 
-        seq = SPGR(seq_params, calib_params)
+        seq = SPGR(write_seq=True, plot=True)
 
         with AcquisitionControlManager() as mgnr:
             mngr.acquisition.set_sequence(sequence=seq, parameter=console.parameter)

@@ -2,7 +2,7 @@ import numpy as np
 
 import pypulseq as pp
 
-def main(
+def SPGR(
     plot: bool = False,
     test_report: bool = False,
     write_seq: bool = False,
@@ -153,5 +153,5 @@ def main(
 
 
 if __name__ == '__main__':
-    main(plot=True, write_seq=True)
+    SPGR(plot=True, write_seq=True)
 
