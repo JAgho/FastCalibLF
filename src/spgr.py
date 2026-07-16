@@ -54,13 +54,13 @@ def main(
 
     # Set system limits
     system = pp.Opts(
-        max_grad=28,
-        grad_unit='mT/m',
-        max_slew=150,
+        max_grad=1703040,
+        grad_unit='Hz/m',
+        max_slew=100,
         slew_unit='T/m/s',
         rf_ringdown_time=20e-6,
         rf_dead_time=100e-6,
-        adc_dead_time=10e-6,
+        adc_dead_time=0.,
     )
 
     seq = pp.Sequence(system)
