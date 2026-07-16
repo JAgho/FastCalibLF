@@ -1,0 +1,35 @@
+import numpy as np
+import math
+from scipy.optimize import minimize
+
+def fit_theta(s1,s2):
+    """
+    Parameter: 
+    s1 : array or number
+    s2 : array or number
+
+    Returns:
+    theta_fit : array - theta value (radians).
+    theta_deg : array - theta value (degrees).
+    result : scipy optimization result.
+
+    Run like fit_theta(s1,s2)
+    """
+
+    def rfunction(theta, n):
+        return (1 + n * np.cos(theta)) / (n + np.cos(theta))
+
+    def loss(theta, r_measured, n):
+        r_pred = rfunction(theta, n)
+        return np.sum((r_pred - r_measured) ** 2)
+
+    theta0 = np.deg2rad(20)
+    n = 5
+    r_measured = s2 / s1
+
+    result = minimize(loss, theta0, args=(r_measured, n))
+
+    theta_fit = result.x
+    theta_deg = np.degrees(theta_fit)
+
+    return theta_fit, theta_deg, result
