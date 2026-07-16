@@ -11,6 +11,7 @@ from read_data import read_data
 from make_magnitude import make_magnitude
 from make_phase_ramps import make_phase_ramps
 from spgr_def_v0 import spgr
+from fft_data import fft_data
 
 def main():
     # TBD
@@ -53,10 +54,26 @@ def main():
         )
         acq_data = mngr.acquisition.run()
 
-    raw = acq_data.receive_data[0]
-    
-    processed_data = raw.processed_data
-    print(processed_data.shape)
+    raw = acq_data.receive_data
+
+    raw_flat = np.asarray([item.processed_data[0] for item in raw])
+    print(raw_flat.shape)
+    data = read_data(
+            raw_flat, params["n_readout"], params["n_repetitions"], 3, params["n_dummy"])
+    print(data.shape)
+    hybrid = fft_data(data)
+
+    fig, ax = plt.subplots(1, 3)
+
+    # Plot for all three axes
+    for i in range(3):
+        ax[i].plot(np.mean(np.abs(hybrid[i]), axis=(0, 1)))
+
+    plt.savefig("Fast_Calib/FastCalibLF/src/hybrid.png")
+    np.save("Fast_Calib/FastCalibLF/src/raw.npy", raw)
+    np.save("Fast_Calib/FastCalibLF/src/hybrid.npy", hybrid)
+    # processed_data = raw.processed_data
+    print(hybrid.shape)
 
 
     # calib_params.print()
