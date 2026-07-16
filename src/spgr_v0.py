@@ -294,8 +294,8 @@ if __name__ == "__main__":
     te_1 = 6e-3
     te_2 = 14e-3
 
-    n_repetitions = 10
-    n_dummy = 10
+    n_repetitions = 1
+    n_dummy = 1
     n_readout = 40
     projection_axes = ("x", "y", "z")
 
