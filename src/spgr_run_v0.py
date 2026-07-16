@@ -14,7 +14,7 @@ from fft_data import fft_data
 from new_f0 import F0
 from fit_phase_ramps import fit_phase_ramp
 from mask_projection_by_snr import mask_projection_by_snr, mask_data
-from shim_set import set_shim_offsets
+from shim_set import set_b1_scaling, set_shim_offsets
 
 def load_data(path):
     return np.load(path, allow_pickle=True)
@@ -45,8 +45,8 @@ def main():
     params = {
         "fov": 220e-3,
         "n_readout": 40,
-        "n_dummy": 10,
-        "n_repetitions": 10,
+        "n_dummy": 20,
+        "n_repetitions": 20,
         "projection_axes": ("x", "y", "z"),
         "flip_angle_deg": 60,
         "rf_duration": 200e-6,
@@ -56,8 +56,8 @@ def main():
         "tr_2_factor": 5,
         "readout_time": 3e-3,
         "prephasing_time": 1e-3,
-        "spoiling_time": 4e-3,
-        "spoiler_cycles": 320,
+        "spoiling_time": 2e-3,
+        "spoiler_cycles": 160,
         "spoiler_extent": (220e-3, 220e-3, 220e-3),
     }
     n_calibs = 1
@@ -90,15 +90,20 @@ def main():
 
         masked_hybrid = mask_data(hybrid, mask_x, mask_y, mask_z)
         plot_stuff(raw, data, hybrid, masked_hybrid)
+
         # fit_phase_ramp(
         S1, S2, = mag[0], mag[1]
         alpha = fit_alpha(S1, S2)
 
+        #set B1 scaling factor
+        set_b1_scaling(nominal_flip_angle=params["flip_angle_deg"], measured_flip_angle=alpha)
+
         #adjust shims
-        set_shim_offsets(x_mt=0.0, y_mt=0.0, z_mt=0.0)
         hx, hy, hz = make_phase_ramps(hybrid)
         vx, vy, vz = unwrap(hx, hy, hz)
         params_new = make_physical(rx, ry, rz, alpha)
+
+        set_shim_offsets(x_mt=0.0, y_mt=0.0, z_mt=0.0)
         write_new(calib_params)
 
     calib_params.print()

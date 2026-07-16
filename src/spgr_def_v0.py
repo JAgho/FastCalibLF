@@ -12,8 +12,8 @@ from console.utilities.sequences.system_settings import system as default_system
 def spgr(
     fov=220e-3,
     n_readout=40,
-    n_dummy=10,
-    n_repetitions=10,
+    n_dummy=20,
+    n_repetitions=20,
     projection_axes=("x", "y", "z"),
     flip_angle_deg=15,
     rf_duration=200e-6,
