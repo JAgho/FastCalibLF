@@ -24,15 +24,15 @@ def plot_stuff(raw, data, hybrid, masked_hybrid):
 
     # Plot for all three axes
     for i in range(3):
-        ax[i].plot(np.mean(np.abs(masked_hybrid[i]), axis=(0, 1)))
+        ax[i].plot(np.mean(np.abs(hybrid[i]), axis=(0, 1)))
 
-    plt.savefig("Fast_Calib/FastCalibLF/src/masked_hybrid.png")
+    plt.savefig("Fast_Calib/FastCalibLF/src/hybrid.png")
     np.save("Fast_Calib/FastCalibLF/src/raw.npy", raw)
     np.save("Fast_Calib/FastCalibLF/src/data.npy", data)
     np.save("Fast_Calib/FastCalibLF/src/hybrid.npy", hybrid)
     np.save("Fast_Calib/FastCalibLF/src/masked_hybrid.npy", masked_hybrid)
     # processed_data = raw.processed_data
-    print(hybrid.shape)
+    # print(hybrid.shape)
 
 with Spectrometer() as spec:
     device_config = spec.get_device_configuration()
@@ -56,8 +56,8 @@ def main():
         "tr_2_factor": 5,
         "readout_time": 3e-3,
         "prephasing_time": 1e-3,
-        "spoiling_time": 2e-3,
-        "spoiler_cycles": 160,
+        "spoiling_time": 4e-3,
+        "spoiler_cycles": 320,
         "spoiler_extent": (220e-3, 220e-3, 220e-3),
     }
     n_calibs = 1
@@ -89,12 +89,10 @@ def main():
         mask_x, mask_y, mask_z = [mask_projection_by_snr(hybrid[i]) for i in range(3)]
 
         masked_hybrid = mask_data(hybrid, mask_x, mask_y, mask_z)
-        print(mask_x)
         plot_stuff(raw, data, hybrid, masked_hybrid)
         # fit_phase_ramp(
         S1, S2, = mag[0], mag[1]
         alpha = fit_alpha(S1, S2)
-
 
         #adjust shims
         set_shim_offsets(x_mt=0.0, y_mt=0.0, z_mt=0.0)
@@ -103,7 +101,7 @@ def main():
         params_new = make_physical(rx, ry, rz, alpha)
         write_new(calib_params)
 
-        calib_params.print()
+    calib_params.print()
 
 if __name__ == "__main__":
     main()
