@@ -8,22 +8,22 @@ class ScanParams:
     gy: float
     gz: float
 
-    def __init(self, cons):
+    def __init__(self, cons):
         self.read_params(cons)
 
     def read_params(self, cons):
-        self.b1_scaling = cons.b1_scaling
-        self.larmor_frequency = cons.larmor_frequency
-        self.gx = cons.gradient_offset.x
-        self.gy = cons.gradient_offset.y
-        self.gz = cons.gradient_offset.z
+        self.b1_scaling = cons.parameter.b1_scaling
+        self.larmor_frequency = cons.parameter.larmor_frequency
+        self.gx = cons.parameter.gradient_offset.x
+        self.gy = cons.parameter.gradient_offset.y
+        self.gz = cons.parameter.gradient_offset.z
 
     def write_params(self, cons):
-        cons.b1_scaling = self.b1_scaling
-        cons.larmor_frequency = self.larmor_frequency
-        cons.gradient_offset.x = self.gx
-        cons.gradient_offset.y = self.gy
-        cons.gradient_offset.z = self.gz
+        cons.parameter.b1_scaling = self.b1_scaling
+        cons.parameter.larmor_frequency = self.larmor_frequency
+        cons.parameter.gradient_offset.x = self.gx
+        cons.parameter.gradient_offset.y = self.gy
+        cons.parameter.gradient_offset.z = self.gz
 
     def print(self):
         print(f"b1_scaling: {self.b1_scaling}")
