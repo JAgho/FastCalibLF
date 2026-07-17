@@ -1,56 +1,50 @@
 import numpy as np
-import nibabel as nib
-from scipy.ndimage import binary_closing, binary_fill_holes
-from scipy.ndimage import label
+from scipy.ndimage import binary_closing, binary_fill_holes, label
 
-def make_mask(input_file, output_file):
+def make_mask(input_file, percentile, closing):
     """
-    Parameter: 
-    input_file : input location
-    output_file : output location
+    Parameters:
+    input_file : str Path to .npy file of shape (num_echoes, X, Y, Z)
+    percentile : int Keep only voxels brighter than {percentile} % of the distribution.
+    closing : int Close shapes that are {closing} voxels from being closed
 
-    Returns:
-    output_file : in the specified location
-    The file's location
-
-    Run make_mask("/cubric/data/c21122708/HCPData/James_data/JamesSNRAware/mag_denoised2.nii", "/cubric/data/c21122708/HCPData/James_data/JamesSNRAware/mag_denoised1_mask.nii")
+    Example
+    make_mask("image.npy", 70, 3)
     """
-    nii = nib.load(input_file)
-    img = nii.get_fdata()
-    
-    percentile = 70 #percentile thresh
-    closing = 3 #controls closing holes
-    
-    
-    # Compute percentile threshold
-    # Ignore background zeros
-    nonzero = img[img > 0]
-    threshold = np.percentile(nonzero, percentile)
-    print(f"Threshold = {threshold:.3f}")
-    
-    
-    # Initial mask
-    mask = img > threshold
-    
-    # Keep only largest component
-    labels, num = label(mask)
-    
-    if num > 0:
-        sizes = np.bincount(labels.ravel())
-        sizes[0] = 0  # Ignore background
-        largest = np.argmax(sizes)
-        mask = labels == largest
-    
-    
-    # Close gaps up to {closing} voxels
-    mask = binary_closing(mask, closing)
-    
-    # Now fill holes
-    mask = binary_fill_holes(mask)
-    mask = mask.astype(np.uint8)
-    
-    # Save mask
-    mask_nii = nib.Nifti1Image(mask, nii.affine, nii.header)
-    nib.save(mask_nii, output_file)
-    
-    print(output_file)
+
+    img = np.load(input_file) # Shape: (E, X, Y, Z)
+
+    if np.iscomplexobj(img):
+        img = np.abs(img)
+
+
+    masks = np.zeros_like(img, dtype=np.uint8)
+
+    for e in range(img.shape[0]):
+
+        volume = img[e]
+        nonzero = volume[volume > 0]
+
+        threshold = np.percentile(nonzero, percentile)
+        print(f"Echo {e}: threshold = {threshold:.3f}")
+
+        # Initial mask
+        mask = volume > threshold
+
+        # Keep largest connected component
+        labels, num = label(mask)
+
+        if num > 0:
+            sizes = np.bincount(labels.ravel())
+            sizes[0] = 0
+            largest = np.argmax(sizes)
+            mask = labels == largest
+
+        # closing
+        mask = binary_closing(mask, iterations=closing)
+
+        # Fill holes
+        mask = binary_fill_holes(mask)
+        masks[e] = mask.astype(np.uint8)
+
+    return masks
