@@ -31,10 +31,10 @@ def spgr_b1(
     # ============================================================
     tr_2 = tr_2_factor * tr_1
 
-    if fid_deadtime < system.adc_dead_time:
+    if fid_deadtime < default_system.adc_dead_time:
         raise ValueError(
             f"FID dead time must be at least "
-            f"{system.adc_dead_time * 1e6:.1f} us."
+            f"{default_system.adc_dead_time * 1e6:.1f} us."
         )
 
     # ============================================================
@@ -43,8 +43,8 @@ def spgr_b1(
     rf = pp.make_block_pulse(
         flip_angle=np.deg2rad(flip_angle_deg),
         duration=rf_duration,
-        delay=system.rf_dead_time,
-        system=system,
+        delay=default_system.rf_dead_time,
+        system=default_system,
         use="excitation",
     )
 
@@ -57,7 +57,7 @@ def spgr_b1(
         num_samples=n_readout,
         duration=readout_time,
         delay=fid_deadtime,
-        system=system,
+        system=default_system,
     )
 
     adc_total_duration = pp.calc_duration(adc)
@@ -71,21 +71,21 @@ def spgr_b1(
         channel="x",
         area=spoiler_cycles / extent_x,
         duration=spoiling_time,
-        system=system,
+        system=default_system,
     )
 
     gy_spoil = pp.make_trapezoid(
         channel="y",
         area=spoiler_cycles / extent_y,
         duration=spoiling_time,
-        system=system,
+        system=default_system,
     )
 
     gz_spoil = pp.make_trapezoid(
         channel="z",
         area=spoiler_cycles / extent_z,
         duration=spoiling_time,
-        system=system,
+        system=default_system,
     )
 
     spoiler_duration = pp.calc_duration(
