@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-axis_proj = 'z'
-data = np.load("src/hybrid.npy")
+# axis_proj = 'x'
+# data = np.load("src/hybrid.npy")
 
-# axis_proj = 'z'
-# data = np.load("src/hybrid_60.npy")
+axis_proj = 'x'
+data = np.load("src/hybrid_60.npy")
 print('Raw:', data.shape)
 
 if axis_proj == 'x':
@@ -22,6 +22,7 @@ print('One axis:', data_ax.shape)
 data_avg = np.mean(data_ax, axis=0)
 print('One axis - avg:', data_avg.shape)
 
+# dif_phase = np.angle(data_ax[:,1,:] * np.conjugate(np.flip(data_ax[:,2,:],axis=1)))
 dif_phase = np.angle(data_ax[:,1,:] * np.conjugate(data_ax[:,2,:]))
 dif_phase = np.mean(dif_phase,axis=0)
 
@@ -53,7 +54,7 @@ dif_phase_masked = np.angle(data_ax_masked[:,1,:] * np.conjugate(data_ax_masked[
 dif_phase_masked = np.mean(dif_phase_masked,axis=0)
 x_ph = np.arange(len(dif_phase_masked))
 y_ph = np.unwrap(dif_phase_masked)
-valid = np.isfinite(y_ph) & (y_ph != 0)
+valid = np.isfinite(y_ph) & (y_ph != 0) & (dif_phase_masked != 0)
 slope_ph, intercept_ph = np.polyfit(x_ph[valid], y_ph[valid], 1)
 linear_fit_ph = slope_ph * x_ph + intercept_ph
 
@@ -86,7 +87,7 @@ ax[1,1].set_ylabel("Flip angle [deg]")
 ax[1,1].grid(True)
 ax[1,1].legend()
 
-ax[1,2].plot(x_ph, y_ph, label="Exp")
+ax[1,2].plot(x_ph, y_ph,label="Exp")
 ax[1,2].plot(x_ph, linear_fit_ph, "--", label=f"Fit: y = {slope_ph:.4f}x + {intercept_ph:.4f}")
 ax[1,2].set_title('Phase diff: TR2 E2-E1')
 # ax[1,2].set_xlabel("Sample")
@@ -96,57 +97,3 @@ ax[1,2].legend()
 
 plt.show()
 
-# fig, ax = plt.subplots(1, 4, figsize=(15, 4))
-# fig.suptitle(fig_title)
-# ax[0].plot(np.abs(data_masked[0]))
-# ax[0].set_title('Mag: TR1')
-# ax[0].set_xlabel("Sample")
-# ax[0].set_ylabel("Magnitude")
-# ax[0].grid(True)
-
-# ax[1].plot(np.abs(data_masked[1]))
-# ax[1].set_title('Mag: TR2 - Echo 1')
-# ax[1].set_xlabel("Sample")
-# ax[1].set_ylabel("Magnitude")
-# ax[1].grid(True)
-
-# ax[2].plot(np.abs(np.flip(data_masked[2])))
-# ax[2].set_title('Mag: TR2 - Echo 2')
-# ax[2].set_xlabel("Sample")
-# ax[2].set_ylabel("Magnitude")
-# ax[2].grid(True)
-
-# ax[3].plot(np.unwrap(dif_phase_masked))
-# ax[3].set_title('Phase diff: TR2')
-# ax[3].set_xlabel("Sample")
-# ax[3].set_ylabel("Phase")
-# ax[3].grid(True)
-
-# plt.show()
-
-# fig, ax = plt.subplots(1, 4, figsize=(15, 4))
-# ax[0].plot(np.abs(data_avg[0]))
-# ax[0].set_title('Mag: TR1')
-# ax[0].set_xlabel("Sample")
-# ax[0].set_ylabel("Magnitude")
-# ax[0].grid(True)
-
-# ax[1].plot(np.abs(data_avg[1]))
-# ax[1].set_title('Mag: TR2 - Echo 1')
-# ax[1].set_xlabel("Sample")
-# ax[1].set_ylabel("Magnitude")
-# ax[1].grid(True)
-
-# ax[2].plot(np.abs(np.flip(data_avg[2])))
-# ax[2].set_title('Mag: TR2 - Echo 2')
-# ax[2].set_xlabel("Sample")
-# ax[2].set_ylabel("Magnitude")
-# ax[2].grid(True)
-
-# ax[3].plot(np.unwrap(dif_phase))
-# ax[3].set_title('Phase diff: TR2')
-# ax[3].set_xlabel("Sample")
-# ax[3].set_ylabel("Phase")
-# ax[3].grid(True)
-
-# plt.show()
