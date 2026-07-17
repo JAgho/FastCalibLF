@@ -8,7 +8,7 @@ def make_spoiled_fid(
     n_repetitions=1,
     flip_angle_deg=60,
     rf_duration=200e-6,
-    fid_dead_time=80e-6,
+    fid_deadtime=80e-6,
     tr_1=20e-3,
     tr_2_factor=5,
     readout_time=4e-3,
@@ -37,7 +37,7 @@ def make_spoiled_fid(
     # ============================================================
     tr_2 = tr_2_factor * tr_1
 
-    if fid_dead_time < system.adc_dead_time:
+    if fid_deadtime < system.adc_dead_time:
         raise ValueError(
             f"FID dead time must be at least "
             f"{system.adc_dead_time * 1e6:.1f} us."
@@ -62,7 +62,7 @@ def make_spoiled_fid(
     adc = pp.make_adc(
         num_samples=n_readout,
         duration=readout_time,
-        delay=fid_dead_time,
+        delay=fid_deadtime,
         system=system,
     )
 
@@ -170,7 +170,7 @@ def make_spoiled_fid(
     seq.set_definition("Name", "spoiled_fid")
     seq.set_definition("ReadoutSamples", n_readout)
     seq.set_definition("ReadoutTime", readout_time)
-    seq.set_definition("FIDDeadTime", fid_dead_time)
+    seq.set_definition("FIDDeadTime", fid_deadtime)
     seq.set_definition("FlipAngleDeg", flip_angle_deg)
     seq.set_definition("TR1", tr_1)
     seq.set_definition("TR2", tr_2)
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         n_repetitions=n_repetitions,
         flip_angle_deg=15.0,
         rf_duration=200e-6,
-        fid_dead_time=80e-6,
+        fid_deadtime=80e-6,
         tr_1=tr_1,
         tr_2_factor=tr_2_factor,
         readout_time=4e-3,

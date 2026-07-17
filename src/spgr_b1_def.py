@@ -15,7 +15,7 @@ def spgr_b1(
     n_repetitions=10,
     flip_angle_deg=60.0,
     rf_duration=200e-6,
-    rf_ringdown_time=80e-6,
+    fid_deadtime=80e-6,
     tr_1=20e-3,
     tr_2_factor=5,
     readout_time=4e-3,
@@ -25,15 +25,16 @@ def spgr_b1(
 ) -> pp.Sequence:
     seq = pp.Sequence(default_system)
 
+
     # ============================================================
     # Input parameters
     # ============================================================
     tr_2 = tr_2_factor * tr_1
 
-    if rf_ringdown_time < default_system.adc_dead_time:
+    if fid_deadtime < system.adc_dead_time:
         raise ValueError(
             f"FID dead time must be at least "
-            f"{default_system.adc_dead_time * 1e6:.1f} us."
+            f"{system.adc_dead_time * 1e6:.1f} us."
         )
 
     # ============================================================
@@ -42,8 +43,8 @@ def spgr_b1(
     rf = pp.make_block_pulse(
         flip_angle=np.deg2rad(flip_angle_deg),
         duration=rf_duration,
-        delay=default_system.rf_dead_time,
-        system=default_system,
+        delay=system.rf_dead_time,
+        system=system,
         use="excitation",
     )
 
@@ -55,8 +56,8 @@ def spgr_b1(
     adc = pp.make_adc(
         num_samples=n_readout,
         duration=readout_time,
-        delay=rf_ringdown_time,
-        system=default_system,
+        delay=fid_deadtime,
+        system=system,
     )
 
     adc_total_duration = pp.calc_duration(adc)
@@ -70,21 +71,21 @@ def spgr_b1(
         channel="x",
         area=spoiler_cycles / extent_x,
         duration=spoiling_time,
-        system=default_system,
+        system=system,
     )
 
     gy_spoil = pp.make_trapezoid(
         channel="y",
         area=spoiler_cycles / extent_y,
         duration=spoiling_time,
-        system=default_system,
+        system=system,
     )
 
     gz_spoil = pp.make_trapezoid(
         channel="z",
         area=spoiler_cycles / extent_z,
         duration=spoiling_time,
-        system=default_system,
+        system=system,
     )
 
     spoiler_duration = pp.calc_duration(
@@ -156,5 +157,32 @@ def spgr_b1(
     for _ in range(n_repetitions):
         add_fid_block(tr_delay_1)
         add_fid_block(tr_delay_2)
+
+    # ============================================================
+    # Metadata
+    # ============================================================
+    seq.set_definition("Name", "spoiled_fid")
+    seq.set_definition("ReadoutSamples", n_readout)
+    seq.set_definition("ReadoutTime", readout_time)
+    seq.set_definition("FIDDeadTime", fid_deadtime)
+    seq.set_definition("FlipAngleDeg", flip_angle_deg)
+    seq.set_definition("TR1", tr_1)
+    seq.set_definition("TR2", tr_2)
+    seq.set_definition("TR2Factor", tr_2_factor)
+    seq.set_definition("DummyPairs", n_dummy)
+    seq.set_definition("Repetitions", n_repetitions)
+
+    # ============================================================
+    # Timing check
+    # ============================================================
+    timing_ok, timing_errors = seq.check_timing()
+
+    if timing_ok:
+        print("Timing check passed.")
+    else:
+        print("Timing errors:")
+
+        for error in timing_errors:
+            print(error)
 
     return seq
