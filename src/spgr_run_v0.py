@@ -6,15 +6,19 @@ from matplotlib import pyplot as plt
 from cortex.spectrometer import Spectrometer
 from console.service.acquisition_manager import AcquisitionControlManager
 from params import ScanParams
-from read_data import read_data
+from read_data import read_data_spgr_b1
 from make_magnitude import make_magnitude_mean
 from make_phase_ramps import make_phase_ramps
 from spgr_def_v0 import spgr
+from spgr_b1_def import spgr_b1
 from fft_data import fft_data
 from new_f0 import F0
 from fit_phase_ramps import fit_phase_ramp
 from mask_projection_by_snr import mask_projection_by_snr, mask_data
 from shim_set import set_b1_scaling, set_shim_offsets
+from fit_phasemap import linear_shim_from_fieldmap
+from fit_alpha import fit_alpha
+from mask import make_mask
 
 def load_data(path):
     return np.load(path, allow_pickle=True)
@@ -41,34 +45,27 @@ gpa_gain = device_config.tx.gpa_gain
 grad_efficiency = device_config.tx.gradient_efficiency
 
 def main():
-    # TBD
+     # TBD
     params = {
-        "fov": 220e-3,
-        "n_readout": 40,
+        "n_readout": 100,
         "n_dummy": 20,
-        "n_repetitions": 20,
-        "projection_axes": ("x", "y", "z"),
-        "flip_angle_deg": 60,
+        "n_repetitions": 10,
+        "flip_angle_deg": 60.0,
         "rf_duration": 200e-6,
-        "te_1": 6e-3,
-        "te_2": 10e-3,
+        "fid_deadtime": 800e-6,
         "tr_1": 20e-3,
         "tr_2_factor": 5,
-        "readout_time": 3e-3,
-        "prephasing_time": 1e-3,
+        "readout_time": 4e-3,
         "spoiling_time": 2e-3,
         "spoiler_cycles": 160,
         "spoiler_extent": (220e-3, 220e-3, 220e-3),
     }
     n_calibs = 1
 
-    # f0 = F0()
-    # f0.run()
-
     calib_params = ScanParams(console)
     for i in range(n_calibs):
 
-        seq = spgr(**params)
+        seq = spgr_b1(**params)
         with AcquisitionControlManager() as mngr:
             mngr.acquisition.set_sequence(
                 sequence=seq,
@@ -77,36 +74,49 @@ def main():
             acq_data = mngr.acquisition.run()
 
         raw = acq_data.receive_data
-        # raw = load_data("Fast_Calib/FastCalibLF/src/raw.npy")
+        data_avg = read_data_spgr_b1(raw, params["n_repetitions"], params["n_readout"])
 
-        raw_flat = np.asarray([item.processed_data[0] for item in raw])
-        data = read_data(
-                raw_flat, params["n_readout"], params["n_repetitions"], 3, params["n_dummy"])
+        theta_deg = fit_alpha(data_avg)
+        # set B1 scaling factor
+        b1_scaling = set_b1_scaling(nominal_flip_angle=params["flip_angle_deg"], measured_flip_angle=theta_deg)
 
-        hybrid = fft_data(data)
-        mag = make_magnitude_mean(hybrid) # TODO: avg data here
+        # mask image
+        mask = make_mask()
 
-        mask_x, mask_y, mask_z = [mask_projection_by_snr(hybrid[i]) for i in range(3)]
+        # adjust shims
+        shim = linear_shim_from_fieldmap(
+            data=img,
+            mask=mask,
+            voxel_size_m=(params["fov"] / params["n_readout"],) * 3,
+            delta_te=params["te_2"] - params["te_1"],
+        )
+        gradient_offset = set_shim_offsets(shim["x_mt"], shim["y_mt"], shim["z_mt"])
+        calib_params.set_params(
+            b1_scaling=b1_scaling,
+            larmor_frequency=console.parameter.larmor_frequency,
+            gx=gradient_offset.x,
+            gy=gradient_offset.y,
+            gz=gradient_offset.z,
+        )
+        calib_params.write_params()
 
-        masked_hybrid = mask_data(hybrid, mask_x, mask_y, mask_z)
-        plot_stuff(raw, data, hybrid, masked_hybrid)
-
-        # fit_phase_ramp(
-        S1, S2, = mag[0], mag[1]
-        alpha = fit_alpha(S1, S2)
-
-        #set B1 scaling factor
-        set_b1_scaling(nominal_flip_angle=params["flip_angle_deg"], measured_flip_angle=alpha)
-
-        #adjust shims
-        hx, hy, hz = make_phase_ramps(hybrid)
-        vx, vy, vz = unwrap(hx, hy, hz)
-        params_new = make_physical(rx, ry, rz, alpha)
-
-        set_shim_offsets(x_mt=0.0, y_mt=0.0, z_mt=0.0)
-        write_new(calib_params)
-
-    calib_params.print()
+        calib_params.print()
 
 if __name__ == "__main__":
     main()
+
+
+"""
+    mask_x, mask_y, mask_z = [mask_projection_by_snr(hybrid[i]) for i in range(3)]
+
+    masked_hybrid = mask_data(hybrid, mask_x, mask_y, mask_z)
+        
+    plot_stuff(raw, data, hybrid, masked_hybrid)
+
+
+    S1, S2 = mag[0], mag[1]
+        alpha = fit_alpha(S1, S2)
+ hx, hy, hz = make_phase_ramps(hybrid)
+        vx, vy, vz = unwrap(hx, hy, hz)
+        params_new = make_physical(rx, ry, rz, alpha)
+"""

@@ -15,7 +15,7 @@ def spgr_b1(
     n_repetitions=10,
     flip_angle_deg=60.0,
     rf_duration=200e-6,
-    fid_deadtime=80e-6,
+    fid_deadtime=2000e-6,
     tr_1=20e-3,
     tr_2_factor=5,
     readout_time=4e-3,

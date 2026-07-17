@@ -18,6 +18,13 @@ class ScanParams:
         self.gy = cons.parameter.gradient_offset.y
         self.gz = cons.parameter.gradient_offset.z
 
+    def set_params(self, b1_scaling, larmor_frequency, gx, gy, gz):
+        self.b1_scaling = b1_scaling
+        self.larmor_frequency = larmor_frequency
+        self.gx = gx
+        self.gy = gy
+        self.gz = gz
+
     def write_params(self, cons):
         cons.parameter.b1_scaling = self.b1_scaling
         cons.parameter.larmor_frequency = self.larmor_frequency

@@ -13,7 +13,7 @@ def set_shim_offsets(x_mt: float, y_mt: float, z_mt: float) -> None:
 
     shims_mv = np.divide((x_mt, y_mt, z_mt), np.multiply(gpa_gain, grad_efficiency))
 
-    console.parameter.gradient_offset = Dimensions(x=shims_mv[0], y=shims_mv[1], z=shims_mv[2])
+    return Dimensions(x=shims_mv[0], y=shims_mv[1], z=shims_mv[2])
 
 
 def set_b1_scaling(nominal_flip_angle: float, measured_flip_angle: float) -> None:
@@ -24,4 +24,4 @@ def set_b1_scaling(nominal_flip_angle: float, measured_flip_angle: float) -> Non
     flip-angle-sweep calibration. nominal and measured must be in the same units.
     """
     factor = measured_flip_angle / nominal_flip_angle
-    console.parameter.b1_scaling = factor * console.parameter.b1_scaling
+    return factor * console.parameter.b1_scaling
